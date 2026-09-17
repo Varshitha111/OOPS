@@ -1,11 +1,5 @@
-
 from abc import ABC, abstractmethod
 from enum import Enum
-
-
-# ============================================================
-# ORDER STATUS
-# ============================================================
 
 class OrderStatus(Enum):
     PLACED = "PLACED"
@@ -15,18 +9,13 @@ class OrderStatus(Enum):
     DELIVERED = "DELIVERED"
     CANCELLED = "CANCELLED"
 
-
-# ============================================================
-# PAYMENT  (abstraction + polymorphism)
-# ============================================================
-
 class Payment(ABC):
     """Acts as the IPayment interface. main app only ever calls
     payment.pay() / payment.refund() — never knows which subclass it has."""
 
     def __init__(self, amount):
         self._amount = amount
-        self._status = False  # True once successfully paid
+        self._status = False  
 
     @property
     def amount(self):
@@ -82,7 +71,7 @@ class CashOnDelivery(Payment):
         return "Cash on Delivery"
 
     def pay(self):
-        # Cash is collected at the doorstep, so it stays PENDING, not SUCCESS
+       
         self._status = False
         print("Payment marked PENDING — to be collected as Cash on Delivery")
         return True
@@ -165,11 +154,6 @@ class Cycle(Vehicle):
     def calculate_delivery_charge(self, distance_km):
         return self.BASE_FARE + self.RATE_PER_KM * distance_km
 
-
-# ============================================================
-# DISCOUNT
-# ============================================================
-
 class Discount(ABC):
     @abstractmethod
     def calculate_discount(self, amount):
@@ -210,37 +194,19 @@ class FestivalDiscount(Discount):
     @property
     def festival_name(self):
         return self._festival_name
-
-
-# ============================================================
-# NOTIFICATION
-# ============================================================
-
 class Notification(ABC):
     @abstractmethod
     def send(self, message):
         pass
-
-
 class EmailNotification(Notification):
     def send(self, message):
         print(f"[Email] {message}")
-
-
 class SMSNotification(Notification):
     def send(self, message):
         print(f"[SMS] {message}")
-
-
 class PushNotification(Notification):
     def send(self, message):
         print(f"[Push] {message}")
-
-
-# ============================================================
-# FOOD ITEM
-# ============================================================
-
 class FoodItem:
     def __init__(self, item_id, name, price, category, is_available=True):
         self._id = item_id
@@ -282,12 +248,6 @@ class FoodItem:
     def __str__(self):
         status = "Available" if self._is_available else "Not Available"
         return f"{self._name} - \u20b9{self._price:.2f} - {self._category} - {status}"
-
-
-# ============================================================
-# ORDER ITEM  (composition building block for Order)
-# ============================================================
-
 class OrderItem:
     def __init__(self, food_item, quantity):
         self._food_item = food_item
@@ -304,18 +264,13 @@ class OrderItem:
     def total_amount(self):
         return self._food_item.price * self._quantity
 
-
-# ============================================================
-# CART
-# ============================================================
-
 class Cart:
     def __init__(self):
         self._items = []
 
     @property
     def items(self):
-        return list(self._items)  # copy — caller can't mutate internals directly
+        return list(self._items)  
 
     def add_item(self, food_item, quantity):
         if not food_item.is_available:
@@ -349,11 +304,6 @@ class Cart:
 
     def is_empty(self):
         return len(self._items) == 0
-
-
-# ============================================================
-# USER  (inheritance root + method overriding via login())
-# ============================================================
 
 class User(ABC):
     def __init__(self, user_id, name, email, phone):
@@ -436,7 +386,6 @@ class Customer(User):
             distance_km=distance_km,
         )
 
-        # Payment amount comes from the order itself — one source of truth.
         payment = payment_class(order.total_amount, **payment_kwargs)
         order.attach_payment(payment)
 
@@ -546,12 +495,6 @@ class DeliveryPartner(User):
         self._current_order.mark_delivered()
         self._current_order = None
         self._available = True
-
-
-# ============================================================
-# RESTAURANT
-# ============================================================
-
 class Restaurant:
     def __init__(self, restaurant_id, name, location, owner, cuisines=None):
         self._id = restaurant_id
@@ -642,10 +585,6 @@ class RestaurantDirectory:
         return results
 
 
-# ============================================================
-# ORDER  (composition of OrderItems, encapsulated state machine)
-# ============================================================
-
 class Order:
     TAX_RATE = 0.05
 
@@ -654,7 +593,7 @@ class Order:
         self._id = order_id
         self._customer = customer
         self._restaurant = restaurant
-        self._order_items = list(order_items)  # composition: Order owns these
+        self._order_items = list(order_items) 
         self._discount = discount
         self._delivery_partner = None
         self._status = OrderStatus.PLACED
@@ -668,7 +607,6 @@ class Order:
             self._subtotal + self._delivery_charge + self._tax - self._discount_amount
         )
 
-    # ---- read-only properties: no external code can corrupt these ----
     @property
     def id(self):
         return self._id
@@ -707,7 +645,6 @@ class Order:
     def assign_delivery_partner(self, delivery_partner):
         self._delivery_partner = delivery_partner
 
-    # ---- controlled status transitions (replaces direct order.status = ...) ----
     def confirm(self):
         if self._status != OrderStatus.PLACED:
             print("Order cannot be confirmed")
@@ -770,29 +707,22 @@ class Order:
             print(f"Vehicle: {self._delivery_partner.vehicle.get_vehicle_type()}")
 
 
-# ============================================================
-# DEMO
-# ============================================================
-
 if __name__ == "__main__":
 
     print("===== FOOD DELIVERY SYSTEM =====")
 
     directory = RestaurantDirectory()
 
-    # ---- Users ----
     customer = Customer(1, "Rahul", "rahul@gmail.com", "9876543210", wallet_balance=500)
     owner = RestaurantOwner(2, "Priya", "priya@gmail.com", "9876543211")
     admin = Admin(3, "Admin", "admin@gmail.com", "9876543212")
     rider = DeliveryPartner(4, "Arjun", "arjun@gmail.com", "9876543213", vehicle=Bike())
 
-    # method overriding: each role's login() prints something different
     customer.login()
     owner.login()
     admin.login()
     rider.login()
 
-    # ---- Restaurant + menu ----
     restaurant = Restaurant(201, "Pizza Palace", "Hyderabad", owner, cuisines=["Italian", "Fast Food"])
     admin.add_restaurant(restaurant, directory)
     owner.assign_restaurant(restaurant)
@@ -807,20 +737,17 @@ if __name__ == "__main__":
 
     restaurant.display_menu()
 
-    # method-overloading demo (name / name+location / name+location+cuisine)
     print("\nSearch 'Pizza':", [r.name for r in directory.search_restaurant("Pizza")])
     print("Search 'Pizza' in Hyderabad:",
           [r.name for r in directory.search_restaurant("Pizza", "Hyderabad")])
     print("Search 'Pizza' in Hyderabad, Italian:",
           [r.name for r in directory.search_restaurant("Pizza", "Hyderabad", "Italian")])
 
-    # ---- Cart ----
     customer.cart.add_item(pizza, 1)
     customer.cart.add_item(burger, 1)
     customer.cart.add_item(coke, 1)
     customer.cart.display()
 
-    # ---- Place order (discount + delivery charge computed from vehicle/distance) ----
     discount = PercentageDiscount(10)
     order = customer.place_order(
         restaurant, discount,
@@ -844,15 +771,9 @@ if __name__ == "__main__":
 
     order.display()
 
-    # ============================================================
-    # BONUS: proving the "add tomorrow without rewriting today" claim
-    # WalletPayment and FestivalDiscount are new subclasses — nothing
-    # above (Payment, Discount, Order, Customer) was modified for them.
-    # ============================================================
-
     print("\n\n===== EXTENSIBILITY DEMO (new classes only) =====")
 
-    customer.add_funds(300)  # top up wallet so the WalletPayment below can succeed
+    customer.add_funds(300)
     customer.cart.add_item(pizza, 2)
     festival_discount = FestivalDiscount("Diwali Sale", 20)
 
